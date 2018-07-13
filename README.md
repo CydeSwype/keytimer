@@ -7,4 +7,4 @@ A keyboard-first countdown timer for productivity/time-management
 * Flashes prominently when complete
 
 # demo
-https://www.yawmp.com/timer/
+http://www.yawmp.com/timer/
