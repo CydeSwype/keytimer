@@ -8,6 +8,7 @@
         var timer_paused
         var timer_is_complete = 0
         var input_minutes = ''
+        var timer_complete_count = 0
 
         var default_background_color = 'rgb(255,255,255)'
         var default_foreground_color = 'rgb(0,0,0)'
@@ -29,9 +30,18 @@
             clearInterval(interval)
             timer_is_complete = 1
 
+            var audio = new Audio('ding.mp3');
+            audio.play();
+
             timer_complete_interval = setInterval(function(){
                 toggle_colors('body', 'background', alt_background_color, default_foreground_color)
                 toggle_colors('#timer-value', 'color', default_background_color, alt_foreground_color)
+                if (timer_complete_count % 2 == 0){
+                    document.title = '-----'
+                } else {
+                    document.title = 'DONE!'
+                }
+                timer_complete_count++
             }, 1000)
         }
 
@@ -114,6 +124,7 @@
         function update_timer(seconds){
             var timer_value = document.getElementById('timer-value')
             timer_value.innerHTML = format_time(seconds)
+            document.title = format_time(seconds)
         }
 
         function countdown(){
