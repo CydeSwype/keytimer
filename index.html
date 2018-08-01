@@ -26,6 +26,16 @@
             }
         }
 
+        function update_fill(){
+            var percent = 1 - current_timer / start_timer_seconds
+            document.querySelector('#fill').style['width'] = percent * 100 + '%'
+            if (percent == 1){
+                document.querySelector('#fill').style['display'] = 'none'
+            } else {
+                document.querySelector('#fill').style['display'] = 'block'
+            }
+        }
+
         function timer_complete(){
             clearInterval(interval)
             timer_is_complete = 1
@@ -125,6 +135,7 @@
             var timer_value = document.getElementById('timer-value')
             timer_value.innerHTML = format_time(seconds)
             document.title = format_time(seconds)
+            update_fill()
         }
 
         function countdown(){
@@ -165,9 +176,11 @@
 
         #input-minutes, #paused-message {display:none; background:#000; color:#fff; width:96%; height:88%; position:absolute; text-align:center; font-size:calc(10vw + 10vh); opacity:.8; padding-top:8%}
         #input-minutes {font-size: calc(10vw + 10vh)}
+        #fill {background:#c63; position:fixed; height:100%; width:0%; z-index:-1}
         </style>
 
         <body id="body" style="background:#fff">
+        <div id="fill"></div>
         <div id="input-minutes"></div>
         <div id="paused-message">PAUSED</div>
         <div style="font-size:35vw; text-align:center">
