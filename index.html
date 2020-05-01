@@ -1,194 +1,225 @@
 <script>
 
-        var start_timer_seconds = 120;
-        var current_timer
+var start_timer_seconds = 120;
+var current_timer
 
-        var timer_complete_interval
-        var interval
-        var timer_paused
-        var timer_is_complete = 0
-        var input_minutes = ''
-        var timer_complete_count = 0
+var timer_complete_interval
+var interval
+var timer_paused
+var timer_is_complete = 0
+var input_minutes = ''
+var timer_complete_count = 0
 
-        var default_background_color = 'rgb(255,255,255)'
-        var default_foreground_color = 'rgb(0,0,0)'
-        var alt_background_color = 'rgb(255, 0, 0)'
-        var alt_foreground_color = 'rgb(100, 100, 100)'
+var default_background_color = 'rgb(255,255,255)'
+var default_foreground_color = 'rgb(0,0,0)'
+var alt_background_color = 'rgb(255, 0, 0)'
+var alt_foreground_color = 'rgb(100, 100, 100)'
 
-        function toggle_colors(target, prop, color1, color2){
-            current_val = document.querySelector(target).style[prop]
+function toggle_colors(target, prop, color1, color2){
+    current_val = document.querySelector(target).style[prop]
 
-            //console.log('current_val is', current_val)
-            if (current_val != color1){
-                document.querySelector(target).style[prop] = color1
-            } else {
-                document.querySelector(target).style[prop] = color2
-            }
+    //console.log('current_val is', current_val)
+    if (current_val != color1){
+        document.querySelector(target).style[prop] = color1
+    } else {
+        document.querySelector(target).style[prop] = color2
+    }
+}
+
+function update_fill(){
+    var percent = 1 - current_timer / start_timer_seconds
+    document.querySelector('#fill').style['width'] = percent * 100 + '%'
+    if (percent == 1){
+        document.querySelector('#fill').style['display'] = 'none'
+    } else {
+        document.querySelector('#fill').style['display'] = 'block'
+    }
+}
+
+function timer_complete(){
+    clearInterval(interval)
+    timer_is_complete = 1
+
+    var audio = new Audio('ding.mp3');
+    audio.play();
+
+    timer_complete_interval = setInterval(function(){
+        toggle_colors('body', 'background', alt_background_color, default_foreground_color)
+        toggle_colors('#timer-value', 'color', default_background_color, alt_foreground_color)
+        if (timer_complete_count % 2 == 0){
+            document.title = '-----'
+        } else {
+            document.title = 'DONE!'
         }
+        timer_complete_count++
+    }, 1000)
+}
 
-        function update_fill(){
-            var percent = 1 - current_timer / start_timer_seconds
-            document.querySelector('#fill').style['width'] = percent * 100 + '%'
-            if (percent == 1){
-                document.querySelector('#fill').style['display'] = 'none'
-            } else {
-                document.querySelector('#fill').style['display'] = 'block'
-            }
-        }
+function str_pad_left(string,pad,length) {
+    return (new Array(length+1).join(pad)+string).slice(-length);
+}
 
-        function timer_complete(){
-            clearInterval(interval)
-            timer_is_complete = 1
+function format_time(seconds){
+    var minutes = Math.floor(seconds / 60)
+    var seconds_remaining = seconds % 60
+    var final_time = str_pad_left(minutes,'0',2) + ':' + str_pad_left(seconds_remaining,'0',2);
+    return final_time
+}
 
-            var audio = new Audio('ding.mp3');
-            audio.play();
+function set_timer(minutes){
+    start_timer_seconds = minutes * 60
+    current_timer = start_timer_seconds
+    start_timer()
+    timer_is_complete = 0
+}
 
-            timer_complete_interval = setInterval(function(){
-                toggle_colors('body', 'background', alt_background_color, default_foreground_color)
-                toggle_colors('#timer-value', 'color', default_background_color, alt_foreground_color)
-                if (timer_complete_count % 2 == 0){
-                    document.title = '-----'
-                } else {
-                    document.title = 'DONE!'
-                }
-                timer_complete_count++
-            }, 1000)
-        }
+function reset_and_restart_timer(){
+    reset_timer()
+    start_timer()
+}
 
-        function str_pad_left(string,pad,length) {
-            return (new Array(length+1).join(pad)+string).slice(-length);
-        }
+function reset_timer(){
+    clearInterval(timer_complete_interval)
+    clearInterval(interval)
 
-        function format_time(seconds){
-            var minutes = Math.floor(seconds / 60)
-            var seconds_remaining = seconds % 60
-            var final_time = str_pad_left(minutes,'0',2) + ':' + str_pad_left(seconds_remaining,'0',2);
-            return final_time
-        }
+    document.querySelector('body').style['background'] = default_background_color
+    document.querySelector('#timer-value').style['color'] = default_foreground_color
 
-        function set_timer(minutes){
-            start_timer_seconds = minutes * 60
-            current_timer = start_timer_seconds
+    current_timer = start_timer_seconds
+    update_timer(current_timer)
+    timer_is_complete = 0
+}
+
+function show_input_minutes(){
+    document.querySelector('#input-minutes').innerHTML = input_minutes + ' mins'
+    document.querySelector('#input-minutes').style.display = 'flex'
+}
+
+function catch_keypress(e){
+    // reset current timer
+    if (e.key == 'r'){
+        reset_and_restart_timer()
+    }
+
+    // pause current timer
+    if (e.key == 'p' || e.code === 'Space'){
+        if (timer_paused){
             start_timer()
-            timer_is_complete = 0
+        } else {
+            pause_timer()
         }
+    }
 
-        function reset_and_restart_timer(){
-            reset_timer()
-            start_timer()
-        }
+    // start new timer
+    if (e.key == 'Enter' || e.key == 'Return'){
+        set_timer(input_minutes)
+        reset_and_restart_timer()
+        document.querySelector('#input-minutes').style.display = 'none'
+        input_minutes = ''
+    }
 
-        function reset_timer(){
-            clearInterval(timer_complete_interval)
-            clearInterval(interval)
+    // set new timer
+    var set_timer_keys = ['0','1','2','3','4','5','6','7','8','9']
+    if (set_timer_keys.indexOf(e.key) != -1){
+        //console.log('set timer key ', e.key)
+        //pause_timer();
+        clearInterval(interval)
+        input_minutes += e.key
+        show_input_minutes()
+    }
 
-            document.querySelector('body').style['background'] = default_background_color
-            document.querySelector('#timer-value').style['color'] = default_foreground_color
+    e.preventDefault();
+}
 
-            current_timer = start_timer_seconds
-            update_timer(current_timer)
-            timer_is_complete = 0
-        }
+function update_timer(seconds){
+    var timer_value = document.getElementById('timer-value')
+    timer_value.innerHTML = format_time(seconds)
+    document.title = format_time(seconds)
+    update_fill()
+}
 
-        function show_input_minutes(){
-            document.querySelector('#input-minutes').innerHTML = input_minutes + ' mins'
-            document.querySelector('#input-minutes').style.display = 'block'
-        }
+function countdown(){
+    if (current_timer === 0){
+        timer_complete()
+        return
+    }
+    if (!current_timer){
+        current_timer = start_timer_seconds
+    }
+    current_timer--
+    update_timer(current_timer)
+//    console.log(current_timer, timer_value)
+}
 
-        function catch_keypress(e){
-            // reset current timer
-            if (e.key == 'r'){
-                reset_and_restart_timer()
-            }
+function start_timer(){
+    interval = setInterval(function(){
+        countdown()
+    }, 1000);
+    document.querySelector('#paused-message').style.display = 'none'
+    timer_paused = false
+}
 
-            // pause current timer
-            if (e.key == 'p' || e.code === 'Space'){
-                if (timer_paused){
-                    start_timer()
-                } else {
-                    pause_timer()
-                }
-            }
+function pause_timer(){
+    clearInterval(interval)
+    document.querySelector('#paused-message').style.display = 'flex'
+    timer_paused = true
 
-            // start new timer
-            if (e.key == 'Enter' || e.key == 'Return'){
-                set_timer(input_minutes)
-                reset_and_restart_timer()
-                document.querySelector('#input-minutes').style.display = 'none'
-                input_minutes = ''
-            }
+    // if the timer has completed and user pauses it, assume they want to reset it as well
+    if (timer_is_complete == 1){
+        reset_timer()
+    }
+}
+</script>
 
-            // set new timer
-            var set_timer_keys = ['0','1','2','3','4','5','6','7','8','9']
-            if (set_timer_keys.indexOf(e.key) != -1){
-                //console.log('set timer key ', e.key)
-                //pause_timer();
-                clearInterval(interval)
-                input_minutes += e.key
-                show_input_minutes()
-            }
+<style>
+body {margin:0; padding:0; overflow: hidden;}
 
-            e.preventDefault();
-        }
+#input-minutes, #paused-message {
+    display: none;
+    text-align: center;
+    background: #000;
+    color: #fff;
+    opacity: .8;
+    font-size: min(25vw, 25vh);
+}
 
-        function update_timer(seconds){
-            var timer_value = document.getElementById('timer-value')
-            timer_value.innerHTML = format_time(seconds)
-            document.title = format_time(seconds)
-            update_fill()
-        }
+#fill {
+    background: #c63; 
+    position: fixed; 
+    height: 100%; 
+    width: 0%; 
+    z-index: -1
+}
 
-        function countdown(){
-            if (current_timer === 0){
-                timer_complete()
-                return
-            }
-            if (!current_timer){
-                current_timer = start_timer_seconds
-            }
-            current_timer--
-            update_timer(current_timer)
-        //    console.log(current_timer, timer_value)
-        }
+svg {
+    width: 100%;
+    height: auto;
+}
 
-        function start_timer(){
-            interval = setInterval(function(){
-                countdown()
-            }, 1000);
-            document.querySelector('#paused-message').style.display = 'none'
-            timer_paused = false
-        }
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  border: 0px solid green;
+  overflow: hidden;
+}
 
-        function pause_timer(){
-            clearInterval(interval)
-            document.querySelector('#paused-message').style.display = 'block'
-            timer_paused = true
+.timer-value-container {
+    font-size: min(35vw, 35vh);
+}
+</style>
 
-            // if the timer has completed and user pauses it, assume they want to reset it as well
-            if (timer_is_complete == 1){
-                reset_timer()
-            }
-        }
-        </script>
+<body id="body" style="background:#fff">
+<div id="fill"></div>
+<div id="input-minutes" class="center"></div>
+<div id="paused-message" class="center">PAUSED</div>
+<div class="center timer-value-container">
+    <span id="timer-value" style="color:#000">---</span>
+</div>
+</body>
 
-        <style>
-        body {margin:0; padding:0}
-
-        #input-minutes, #paused-message {display:none; background:#000; color:#fff; width:96%; height:88%; position:absolute; text-align:center; font-size:calc(10vw + 10vh); opacity:.8; padding-top:8%}
-        #input-minutes {font-size: calc(10vw + 10vh)}
-        #fill {background:#c63; position:fixed; height:100%; width:0%; z-index:-1}
-        </style>
-
-        <body id="body" style="background:#fff">
-        <div id="fill"></div>
-        <div id="input-minutes"></div>
-        <div id="paused-message">PAUSED</div>
-        <div style="font-size:35vw; text-align:center">
-            <span id="timer-value" style="color:#000"></span>
-        </div>
-        </body>
-
-        <script>
-        start_timer()
-        document.onkeypress = function(e) {catch_keypress(e)};
-        </script>
+<script>
+start_timer()
+document.onkeypress = function(e) {catch_keypress(e)};
+</script>
