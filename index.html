@@ -117,6 +117,10 @@ function open_config(){
 
 function close_config(){
     console.log('close the config')
+
+    // save the config data
+    save_config()
+
     // hide the config div
     document.querySelector('#config').style.display = 'none'
 
@@ -203,6 +207,7 @@ function countdown(){
 }
 
 function start_timer(){
+    clearInterval(interval)
     interval = setInterval(function(){
         countdown()
     }, 1000);
@@ -229,12 +234,38 @@ function toggle_audio(audio_checkbox){
     }
 }
 
+function change_bgcolor(color_input){
+    var new_color = color_input.value
+    if (new_color.length > 0 && new_color.length <= 7 && new_color.substring(0, 1) == '#'){
+        document.getElementById('fill').style.background = new_color
+    }
+}
+
 function restore_config(){
     // read data from localstorage and restore form values
+    var config = JSON.parse(localStorage.getItem('config'))
+    console.log(config)
+
+    // set the HTML values and then hit each of the methods to read
+    document.getElementById('config_ding').checked = config['ding']
+    document.getElementById('config_bgcolor').value = config['bgcolor']
+    toggle_audio(document.getElementById('config_ding'))
+    change_bgcolor(document.getElementById('config_bgcolor'))
 }
 
 function save_config(){
     // cycle through form elements and save the values to localstorage
+    var config_data = {}
+    document.querySelectorAll('.config_el').forEach(function (o){
+        if (o.type == 'checkbox'){
+            config_data[o.name] = o.checked
+        } else {
+            config_data[o.name] = o.value
+        }
+    })
+
+    // store the combined data
+    localStorage.setItem('config', JSON.stringify(config_data))
 }
 
 var window_height = window.innerHeight
@@ -305,8 +336,9 @@ svg {
 
 <body id="body" style="background:#fff">
 <div id="config">
-    <div>Ding on timer complete: <input type="checkbox" class="checkbox" name="ding" checked="true" onchange="toggle_audio(this)"/></div>
-    <div style="text-align:center; margin-top:10px"><input type="button" class="button" value="OK" onclick="close_config()"/></div>
+    <div>Ding on timer complete: <input type="checkbox" class="checkbox config_el" name="ding" checked="true" id="config_ding" onchange="toggle_audio(this)"/></div>
+    <div>Timer background color: <input type="color" class="config_el" name="bgcolor" value="#cc6633" id="config_bgcolor" onchange="change_bgcolor(this)"/></div>
+    <div style="text-align:center; margin-top:10px"><input type="button" class="button" value="SAVE" onclick="close_config()"/></div>
 </div>
 <div id="timer">
     <div id="fill"></div>
@@ -321,4 +353,5 @@ svg {
 <script>
 start_timer()
 document.onkeypress = function(e) {catch_keypress(e)};
+restore_config();
 </script>
