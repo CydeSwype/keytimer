@@ -163,26 +163,23 @@ function close_task(){
     task_is_showing = 0
 }
 
-function catch_keypress(e){
-    var return_to_timer_keys = ['`'] // TODO: figure out how to catch esc key
-
-    // while task list is showing, ignore (most) key catching
-    if (task_is_showing){
-        if (return_to_timer_keys.indexOf(e.key) != -1){
-            if (task_is_showing){
-                close_task()
-            }
-        }
-    
-        return true
-    }
-
-    if (return_to_timer_keys.indexOf(e.key) != -1){
+function catch_onkeydown(e){
+    if (e.key == 'Escape'){
         if (config_is_showing){
             close_config()
         }
+        if (task_is_showing){
+            close_task()
+        }
     }
+}
 
+function catch_keypress(e){
+    // while task list is showing, ignore (most) key catching
+    if (task_is_showing){
+        return true
+    }
+    
     // reset current timer
     if (e.key == 'r' || e.key == 'R'){
         reset_and_restart_timer()
@@ -240,7 +237,6 @@ function catch_keypress(e){
         }
     }
 
-    //console.log(e.key)
     e.preventDefault();
 }
 
@@ -301,17 +297,19 @@ function restore_config(){
     // read data from localstorage and restore form values
     var config = JSON.parse(localStorage.getItem('config'))
 
-    if (document.getElementById('config_ding') && document.getElementById('config_bgcolor')){
-        // set the HTML values and then hit each of the methods to read
-        document.getElementById('config_ding').checked = config['ding']
-        document.getElementById('config_bgcolor').value = config['bgcolor']
-        toggle_audio(document.getElementById('config_ding'))
-        
-        // restore background color
-        change_bgcolor(config['bgcolor'])
+    if (config){
+        if (document.getElementById('config_ding') && document.getElementById('config_bgcolor')){
+            // set the HTML values and then hit each of the methods to read
+            document.getElementById('config_ding').checked = config['ding']
+            document.getElementById('config_bgcolor').value = config['bgcolor']
+            toggle_audio(document.getElementById('config_ding'))
+            
+            // restore background color
+            change_bgcolor(config['bgcolor'])
 
-        // restore default timer length (in minutes)
-        set_timer(config['default_timer_length'])
+            // restore default timer length (in minutes)
+            set_timer(config['default_timer_length'])
+        }
     }
 }
 
@@ -503,6 +501,8 @@ var play_audio_on_complete = 1
 // designed to be initiated after page loads in index.html
 window.onload = function() {
     document.onkeypress = function(e) {catch_keypress(e)};
+    document.onkeydown = function(e) {catch_onkeydown(e)}; // needed for Escape key handling
+
     restore_config()
     restore_tasks()
     init()

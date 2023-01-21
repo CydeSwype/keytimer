@@ -56,12 +56,3 @@ chrome.windows.onRemoved.addListener(() => {
     // set a flag so we know that we've created a new window and so we don't create a second one
     windowIsOpen = false
 })
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    //console.log('page updated', tabId, changeInfo, tab)
-
-    chrome.tabs.sendMessage(tabId, {
-        cmd: "eval_page",
-        changeInfo: changeInfo
-    });
-})
