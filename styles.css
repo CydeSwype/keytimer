@@ -23,6 +23,7 @@ h3 {
 
 #config, #task-list {
     display: none;
+    position: relative;
     z-index: 4;
     width: 100%;
     height: 100%;
@@ -89,4 +90,17 @@ svg {
 
 .timer-value-container {
     font-size: min(35vw, 35vh);
+}
+
+#timer {
+    position: relative;
+    z-index: 1;
+}
+
+#timer-description {
+    position: absolute;
+    font-size: min(10vw, 10vh);
+    top: 75%;
+    text-align: center;
+    width: 100%;
 }

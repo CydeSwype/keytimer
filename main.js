@@ -45,6 +45,7 @@ function timer_complete(){
     timer_complete_interval = setInterval(function(){
         toggle_colors('#timer', 'background', alt_background_color, default_foreground_color)
         toggle_colors('#timer-value', 'color', default_background_color, alt_foreground_color)
+        toggle_colors('#timer-description', 'color', alt_foreground_color, alt_foreground_color)
         if (timer_complete_count % 2 == 0){
             document.title = '-----'
         } else {
@@ -65,11 +66,22 @@ function format_time(seconds){
     return final_time
 }
 
-function set_timer(minutes){
+function set_timer(minutes, description){
     start_timer_seconds = minutes * 60
     current_timer = start_timer_seconds
+    
     // save this new timer length as the default for next launch
     save_config()
+
+    // if timer/task description is set, then config the display
+    if (description){
+        timer_description_text = description
+    } else {
+        timer_description_text = ''
+    }
+
+    document.getElementById('timer-description').innerText = timer_description_text
+
     start_timer()
     timer_is_complete = 0
 }
@@ -98,10 +110,7 @@ function show_input_minutes(){
 
 function open_config(){
     // store the window size and location so we can restore it after the user is done with the config view
-    window_height = window.innerHeight
-    window_width = window.innerWidth
-    window_x = window.screenLeft
-    window_y = window.screenTop
+    save_current_window_size()
 
     // resize the window
     var width = 380
@@ -128,12 +137,16 @@ function close_config(){
     config_is_showing = 0
 }
 
-function open_task(){
-    // store the window size and location so we can restore it after the user is done with the config view
-    window_height = window.innerHeight
-    window_width = window.innerWidth
+function save_current_window_size(){
+    window_height = window.outerHeight
+    window_width = window.outerWidth
     window_x = window.screenLeft
     window_y = window.screenTop
+}
+
+function open_task(){
+    // store the window size and location so we can restore it after the user is done with the config view
+    save_current_window_size()
 
     // resize the window
     var width = 380
@@ -332,6 +345,18 @@ function save_config(){
     change_bgcolor(config_data['bgcolor'])
 }
 
+function populate_task_summary(task_data){
+    // calculate total time of tasks
+    total_time = 0
+    for (i in task_data){
+        total_time += parseInt(task_data[i].estimate)
+    }
+    var task_summary = document.querySelector('#task_summary')
+    var total_hours = Math.floor(total_time / 60)
+    var remainger_minutes = total_time % 60
+    task_summary.innerHTML = 'Summary: ' + total_hours + ' hours & ' + remainger_minutes + ' minutes (' + total_time + ' total minutes)'
+}
+
 function restore_tasks(){
     // read from storage
     var task_data = JSON.parse(localStorage.getItem('tasks'))
@@ -343,6 +368,7 @@ function restore_tasks(){
         }
     }
 
+    populate_task_summary(task_data)
     hookup_task_buttons()
 }
 
@@ -353,6 +379,7 @@ function add_task(new_task_name, new_task_estimate, save = true){
     new_task.classList.remove('template')
     new_task.querySelector('.name').innerHTML = new_task_estimate + ' - ' + new_task_name
     new_task.querySelector('.start').setAttribute('minutes', new_task_estimate)
+    new_task.querySelector('.start').setAttribute('description', new_task_name)
     new_task.setAttribute('task-id', task_id)
     document.getElementById('tasks').appendChild(new_task)
 
@@ -414,9 +441,13 @@ function process_add_task_form(){
 }
 
 function start_timer_from_task(task){
-    input_minutes = task.getAttribute('minutes')
+    task_minutes = task.getAttribute('minutes')
+    task_description = task.getAttribute('description')
 
-    set_timer(input_minutes)
+    // clear input minutes so user can override task timer and start a new timer fresh
+    input_minutes = ''
+
+    set_timer(task_minutes, task_description)
     reset_and_restart_timer()
     close_task()
 }

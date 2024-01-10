@@ -2,24 +2,7 @@ var popupWindowID;
 var windowIsOpen = false;
 
 chrome.runtime.onInstalled.addListener(() => {
-    // code to run when installed -- get the referrer from the jump page that installed the CE
-    chrome.cookies.get({'url': 'https://www.yawmp.com/timer', 'name': 'referrer_src'}, (cookie) => {
-        if (cookie){
-            console.log('cookie for referrer_src found', cookie.value)
-            // send this referrer value to a backend server so we can see which marketing channels are the most effective
-            fetch('https://www.yawmp.com/timer/installs_referrer_log.php?src=' + cookie.value)
-                .then(response => response.json())
-                .then(data => console.log(data))
-        } else {
-            console.log('no cookie for referrer_src found')
-        }
-    })
-
     const foo = 1
-
-    // try getAll cookies
-    var gettingAll = chrome.cookies.getAll({name: "referrer_src"})
-    console.log(gettingAll)
 });
 
 chrome.action.onClicked.addListener((tab) => {

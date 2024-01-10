@@ -1,24 +1,15 @@
 {
     "update_url": "https://clients2.google.com/service/update2/crx",
     "name": "Visual Timer",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "description": "A visual timer to help you focus on your current task.",
-    "permissions": [
-      "cookies"
-    ],
+    "permissions": [],
     "background": {
       "service_worker": "background.js",
       "type": "module"
     },
     "action": {},
-    "host_permissions": [
-        "*://*.yawmp.com/*"
-    ],
     "content_scripts": [
-      {
-        "matches": ["*://*/*"],
-        "js": ["content.js"]
-      }
     ],
     "icons": {
       "16": "assets/icon-16.png",
