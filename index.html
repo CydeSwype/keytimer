@@ -15,14 +15,15 @@
         <h3>Keyboard Shortcuts</h3>
         <div>
             <div><b>Space</b> or <b>P</b> : Pause/Resume</div>
-            <div><b>1-99</b> : Set timer for [1-99] mins (Enter to start)</div>
+            <div><b>1-999</b> : Set timer for [1-999] mins (Enter to start)</div>
             <div><b>R</b> : Restart timer</div>
             <div><b>T</b> : Task view</div>
             <div><b>?</b> : Toggle settings panel</div>
+            <div><b>&gt;</b> : Mark current task complete and begin next task</div>
         </div>
     </div>
 </div>
-<div id="task-list" class="block">
+<div id="task-list">
     <h3>Task List (<a href="#" id="close_task_list_button">close</a>)</h3>
     <div class="task template">
         <div class="name"></div>
@@ -31,12 +32,15 @@
     </div>
     <div>
         <form id="new_task_form">
-        <input type="text" name="new_task" id="new_task_input" value="" placeholder="mins - name (i.e. 20 - draft blog post)" style="width:80%"/> 
+        <input type="text" name="new_task" id="new_task_input" value="" placeholder="mins - task (i.e. 20 - draft blog post)" style="width:80%"/>
         <input type="button" id="new_task_submit" value="add"/>
         </form>
     </div>
-    <div id="tasks" style="max-height:295px; overflow-y:auto"></div>
-    <div id="task_summary"></div>
+    <div id="tasks"></div>
+    <div id="task-summary">
+        <div class="sum"></div>
+        <div id="toast">You have reached the end of the task list</div>
+    </div>
 </div>
 <div id="timer">
     <div id="fill"></div>

@@ -1,27 +1,38 @@
-body {margin:0; padding:0; overflow: hidden;}
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
 
 h3 {
     margin-block-start: 0px;
+    padding:10px;
 }
 
-#input-minutes, #paused-message {
+#new_task_form {
+    padding: 0px 10px;
+}
+
+#input-minutes,
+#paused-message {
     display: none;
     text-align: center;
     background: #000;
     color: #fff;
-    opacity: .8;
+    opacity: 0.8;
     font-size: min(25vw, 25vh);
 }
 
 #fill {
-    background: #c63; 
-    position: fixed; 
-    height: 100%; 
-    width: 0%; 
+    background: #c63;
+    position: fixed;
+    height: 100%;
+    width: 0%;
     z-index: -1;
 }
 
-#config, #task-list {
+#config,
+#task-list {
     display: none;
     position: relative;
     z-index: 4;
@@ -31,11 +42,11 @@ h3 {
 }
 
 .block {
-    padding:10px;
+    padding: 10px;
 }
 
 .task {
-    border-bottom:1px #999 solid;
+    border-bottom: 1px #999 solid;
     float: left;
     width: 100%;
     padding-bottom: 4px;
@@ -45,6 +56,11 @@ h3 {
 .task div {
     float: left;
     padding: 3px;
+}
+
+.task .name {
+    width: 250px;
+    padding-left: 10px;
 }
 
 svg {
@@ -57,18 +73,18 @@ svg {
 }
 
 .center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  border: 0px solid green;
-  overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    border: 0px solid green;
+    overflow: hidden;
 }
 
 .button {
     padding: 10px 40px;
     font-size: 20px;
-    background: #5A6;
+    background: #5a6;
     color: #fff;
     border-radius: 6px;
     display: inline-block;
@@ -77,15 +93,47 @@ svg {
 
 #task-list .button {
     float: right;
-    margin-right: 20px;
-    padding: 3px 10px;
+    margin-left: 10px;
+    padding: 3px 12px;
     border-radius: 8px;
     color: #fff;
     font-size: 12px;
 }
 
+#tasks {
+    max-height: 250px;
+    width: 420px;
+    overflow-y: scroll;
+    box-sizing: border-box;
+    padding-bottom: 50px;
+}
+
+/* Hide scrollbar for WebKit browsers */
+#tasks::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for Firefox */
+#tasks {
+    scrollbar-width: none; /* Firefox */
+}
+
+#task-summary {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #f8f9fa; /* Example background color */
+    padding: 10px;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Optional: add a shadow for better visibility */
+  }
+
 .button.remove {
     background: #966;
+}
+
+.button.start {
+    margin-right: 8px;
 }
 
 .timer-value-container {
@@ -104,3 +152,16 @@ svg {
     text-align: center;
     width: 100%;
 }
+
+#toast {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Example background color */
+    color: white; /* Example text color */
+    padding: 10px;
+    text-align: center;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 1s ease-in-out;
+  }
