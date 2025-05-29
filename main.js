@@ -613,6 +613,17 @@ function init() {
       close_config();
     });
 
+  // Add settings button click event
+  document
+    .querySelector("#settings-button")
+    .addEventListener("click", () => {
+      if (config_is_showing) {
+        close_config();
+      } else {
+        open_config();
+      }
+    });
+
   //hookup_task_buttons()
 }
 
