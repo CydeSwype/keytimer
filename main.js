@@ -38,7 +38,14 @@ function timer_complete() {
   timer_is_complete = 1;
 
   if (play_audio_on_complete) {
-    var audio = new Audio("ding.mp3");
+    var audio;
+    if (custom_audio_file) {
+      // Use custom audio file if available
+      audio = new Audio(custom_audio_file);
+    } else {
+      // Fall back to default ding.mp3
+      audio = new Audio("ding.mp3");
+    }
     audio.play();
   }
 
@@ -376,6 +383,19 @@ function toggle_audio(audio_checkbox) {
   }
 }
 
+function handle_custom_audio(file_input) {
+  if (file_input.files && file_input.files[0]) {
+    var file = file_input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      custom_audio_file = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    custom_audio_file = null;
+  }
+}
+
 function change_bgcolor(color_input) {
   if (
     color_input.length > 0 &&
@@ -393,12 +413,18 @@ function restore_config() {
   if (config) {
     if (
       document.getElementById("config_ding") &&
-      document.getElementById("config_bgcolor")
+      document.getElementById("config_bgcolor") &&
+      document.getElementById("config_custom_audio")
     ) {
       // set the HTML values and then hit each of the methods to read
       document.getElementById("config_ding").checked = config["ding"];
       document.getElementById("config_bgcolor").value = config["bgcolor"];
       toggle_audio(document.getElementById("config_ding"));
+
+      // restore custom audio file if available
+      if (config["custom_audio"]) {
+        custom_audio_file = config["custom_audio"];
+      }
 
       // restore background color
       change_bgcolor(config["bgcolor"]);
@@ -416,10 +442,18 @@ function save_config() {
   document.querySelectorAll(".config_el").forEach(function (o) {
     if (o.type == "checkbox") {
       config_data[o.name] = o.checked;
+    } else if (o.type == "file") {
+      // File input handled separately via handle_custom_audio function
+      // Don't include file input in config data
     } else {
       config_data[o.name] = o.value;
     }
   });
+
+  // Save custom audio file separately
+  if (custom_audio_file) {
+    config_data["custom_audio"] = custom_audio_file;
+  }
 
   // store the combined data
   localStorage.setItem("config", JSON.stringify(config_data));
@@ -599,11 +633,15 @@ function init() {
       return false;
     });
 
-  document.querySelector("#config_ding").addEventListener("change", () => {
+  document.querySelector("#config_ding").addEventListener("change", function() {
     toggle_audio(this);
   });
 
-  document.querySelector("#config_bgcolor").addEventListener("change", () => {
+  document.querySelector("#config_custom_audio").addEventListener("change", function() {
+    handle_custom_audio(this);
+  });
+
+  document.querySelector("#config_bgcolor").addEventListener("change", function() {
     change_bgcolor(this);
   });
 
@@ -634,6 +672,7 @@ var window_y = window.screenTop;
 var config_is_showing = 0;
 var task_is_showing = 0;
 var play_audio_on_complete = 1;
+var custom_audio_file = null;
 
 // designed to be initiated after page loads in index.html
 window.onload = function () {
