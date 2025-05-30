@@ -7,6 +7,7 @@ var timer_paused;
 var timer_is_complete = 0;
 var input_minutes = "";
 var timer_complete_count = 0;
+var overtime_seconds = 0;
 
 var default_background_color = "";
 var default_foreground_color = "rgb(0,0,0)";
@@ -36,6 +37,7 @@ function update_fill() {
 function timer_complete() {
   clearInterval(interval);
   timer_is_complete = 1;
+  overtime_seconds = 0;
 
   if (play_audio_on_complete) {
     var audio;
@@ -50,6 +52,13 @@ function timer_complete() {
   }
 
   timer_complete_interval = setInterval(function () {
+    // Increment overtime counter
+    overtime_seconds++;
+    
+    // Update timer display with negative time
+    update_timer(-overtime_seconds);
+    
+    // Continue flashing behavior
     toggle_colors(
       "#timer",
       "background",
@@ -82,15 +91,21 @@ function str_pad_left(string, pad, length) {
 }
 
 function format_time(seconds) {
-  var minutes = Math.floor(seconds / 60);
-  var seconds_remaining = seconds % 60;
+  var is_negative = seconds < 0;
+  var abs_seconds = Math.abs(seconds);
+  var minutes = Math.floor(abs_seconds / 60);
+  var seconds_remaining = abs_seconds % 60;
+  var prefix = is_negative ? "-" : "";
+  
   if (minutes > 99) {
     var final_time =
+      prefix +
       str_pad_left(minutes, "0", 3) +
       ":" +
       str_pad_left(seconds_remaining, "0", 2);
   } else {
     var final_time =
+      prefix +
       str_pad_left(minutes, "0", 2) +
       ":" +
       str_pad_left(seconds_remaining, "0", 2);
@@ -101,6 +116,7 @@ function format_time(seconds) {
 function set_timer(minutes, description) {
   start_timer_seconds = minutes * 60;
   current_timer = start_timer_seconds;
+  overtime_seconds = 0;
 
   // save this new timer length as the default for next launch
   save_config();
@@ -136,6 +152,7 @@ function reset_timer() {
     default_foreground_color;
 
   current_timer = start_timer_seconds;
+  overtime_seconds = 0;
   update_timer(current_timer);
   timer_is_complete = 0;
 }
