@@ -9,6 +9,15 @@ var input_minutes = "";
 var timer_complete_count = 0;
 var overtime_seconds = 0;
 
+// Gamification variables
+var points_today = 0;
+var total_points = 0;
+var current_streak = 0;
+var daily_points_threshold = 100; // configurable threshold for streak
+var last_points_date = null;
+var points_interval; // for awarding points every minute
+var is_task_timer_running = false; // track if timer is running on a task
+
 var default_background_color = "";
 var default_foreground_color = "rgb(0,0,0)";
 var alt_background_color = "rgb(255, 0, 0)";
@@ -38,6 +47,9 @@ function timer_complete() {
   clearInterval(interval);
   timer_is_complete = 1;
   overtime_seconds = 0;
+  
+  // Stop points tracking when timer completes
+  stop_points_tracking();
 
   if (play_audio_on_complete) {
     var audio;
@@ -145,6 +157,10 @@ function reset_and_restart_timer() {
 function reset_timer() {
   clearInterval(timer_complete_interval);
   clearInterval(interval);
+  
+  // Stop points tracking and reset task timer flag
+  stop_points_tracking();
+  is_task_timer_running = false;
 
   document.querySelector("#timer").style["background"] =
     default_background_color;
@@ -263,6 +279,7 @@ function catch_keypress(e) {
 
   // start new timer
   if (e.key == "Enter" || e.key == "Return") {
+    is_task_timer_running = false; // Regular timer, not a task timer
     set_timer(input_minutes);
     reset_and_restart_timer();
     document.querySelector("#input-minutes").style.display = "none";
@@ -358,6 +375,7 @@ function update_timer(seconds) {
   timer_value.innerHTML = format_time(seconds);
   document.title = format_time(seconds);
   update_fill();
+  update_points_display(); // Update points display to show current status
 }
 
 function countdown() {
@@ -379,12 +397,20 @@ function start_timer() {
   }, 1000);
   document.querySelector("#paused-message").style.display = "none";
   timer_paused = false;
+  
+  // Start points tracking if this is a task timer
+  if (is_task_timer_running) {
+    start_points_tracking();
+  }
 }
 
 function pause_timer() {
   clearInterval(interval);
   document.querySelector("#paused-message").style.display = "flex";
   timer_paused = true;
+  
+  // Stop points tracking when paused
+  stop_points_tracking();
 
   // if the timer has completed and user pauses it, assume they want to reset it as well
   if (timer_is_complete == 1) {
@@ -445,6 +471,14 @@ function restore_config() {
 
       // restore background color
       change_bgcolor(config["bgcolor"]);
+      
+      // restore daily points threshold
+      if (config["daily_points_threshold"]) {
+        daily_points_threshold = config["daily_points_threshold"];
+        if (document.getElementById("config_points_threshold")) {
+          document.getElementById("config_points_threshold").value = daily_points_threshold;
+        }
+      }
 
       // restore default timer length (in minutes)
       set_timer(config["default_timer_length"]);
@@ -471,12 +505,22 @@ function save_config() {
   if (custom_audio_file) {
     config_data["custom_audio"] = custom_audio_file;
   }
+  
+  // Update daily points threshold from form
+  if (document.getElementById("config_points_threshold")) {
+    daily_points_threshold = parseInt(document.getElementById("config_points_threshold").value) || 100;
+    config_data["daily_points_threshold"] = daily_points_threshold;
+  }
 
   // store the combined data
   localStorage.setItem("config", JSON.stringify(config_data));
 
   // immediately set the new backgroud color
   change_bgcolor(config_data["bgcolor"]);
+  
+  // update gamification data with new threshold
+  save_gamification_data();
+  update_points_display();
 }
 
 function populate_task_summary(task_data) {
@@ -588,6 +632,9 @@ function start_timer_from_task(task) {
 
   // clear input minutes so user can override task timer and start a new timer fresh
   input_minutes = "";
+  
+  // Enable points tracking for task timers
+  is_task_timer_running = true;
 
   set_timer(task_minutes, task_description);
   reset_and_restart_timer();
@@ -702,7 +749,121 @@ window.onload = function () {
 
   restore_config();
   restore_tasks();
+  restore_gamification_data(); // Initialize gamification data
   init();
   start_timer();
   hookup_task_input();
 };
+
+// Gamification functions
+function award_point() {
+  if (is_task_timer_running && !timer_paused && timer_is_complete === 0) {
+    points_today++;
+    total_points++;
+    update_points_display();
+    save_gamification_data();
+  }
+}
+
+function start_points_tracking() {
+  // Award a point every minute (60 seconds)
+  points_interval = setInterval(award_point, 60000);
+}
+
+function stop_points_tracking() {
+  if (points_interval) {
+    clearInterval(points_interval);
+    points_interval = null;
+  }
+}
+
+function get_today_date_string() {
+  const today = new Date();
+  return today.toISOString().split('T')[0]; // YYYY-MM-DD format
+}
+
+function calculate_streak() {
+  const today = get_today_date_string();
+  const gamification_data = JSON.parse(localStorage.getItem("gamification_data")) || {};
+  const daily_points = gamification_data.daily_points || {};
+  
+  let streak = 0;
+  let current_date = new Date();
+  
+  // Check backwards from today to find consecutive days with sufficient points
+  for (let i = 0; i < 365; i++) { // Limit to 365 days to prevent infinite loop
+    const date_string = current_date.toISOString().split('T')[0];
+    const points_for_date = daily_points[date_string] || 0;
+    
+    if (points_for_date >= daily_points_threshold) {
+      streak++;
+      current_date.setDate(current_date.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+}
+
+function update_points_display() {
+  const points_display = document.getElementById("points-display");
+  const streak_display = document.getElementById("streak-display");
+  
+  if (points_display) {
+    let points_text = `Today: ${points_today} pts | Total: ${total_points} pts`;
+    if (is_task_timer_running && !timer_paused && timer_is_complete === 0) {
+      points_text += " ⚡"; // Lightning bolt to indicate points are being earned
+    }
+    points_display.innerText = points_text;
+  }
+  
+  if (streak_display) {
+    current_streak = calculate_streak();
+    streak_display.innerText = `🔥 ${current_streak} day streak`;
+  }
+}
+
+function save_gamification_data() {
+  const today = get_today_date_string();
+  const gamification_data = JSON.parse(localStorage.getItem("gamification_data")) || {};
+  
+  // Initialize daily_points object if it doesn't exist
+  if (!gamification_data.daily_points) {
+    gamification_data.daily_points = {};
+  }
+  
+  // Update today's points
+  gamification_data.daily_points[today] = points_today;
+  gamification_data.total_points = total_points;
+  gamification_data.daily_points_threshold = daily_points_threshold;
+  
+  localStorage.setItem("gamification_data", JSON.stringify(gamification_data));
+}
+
+function restore_gamification_data() {
+  const today = get_today_date_string();
+  const gamification_data = JSON.parse(localStorage.getItem("gamification_data"));
+  
+  if (gamification_data) {
+    total_points = gamification_data.total_points || 0;
+    daily_points_threshold = gamification_data.daily_points_threshold || 100;
+    
+    // Get today's points
+    if (gamification_data.daily_points && gamification_data.daily_points[today]) {
+      points_today = gamification_data.daily_points[today];
+    } else {
+      points_today = 0;
+    }
+    
+    last_points_date = today;
+  } else {
+    // Initialize for first time users
+    points_today = 0;
+    total_points = 0;
+    daily_points_threshold = 100;
+    last_points_date = today;
+  }
+  
+  update_points_display();
+}
