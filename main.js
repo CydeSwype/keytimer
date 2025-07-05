@@ -14,6 +14,122 @@ var default_foreground_color = "rgb(0,0,0)";
 var alt_background_color = "rgb(255, 0, 0)";
 var alt_foreground_color = "rgb(100, 100, 100)";
 
+// --- Gamification variables and logic ---
+var points_today = 0;
+var daily_points_threshold = 100;
+var points_interval = null;
+var points_timeout = null;
+var points_award_remaining_ms = 60000;
+var points_last_award_time = null;
+var is_task_timer_running = false;
+var show_scoring = true;
+
+function get_today_date_string() {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+}
+
+function save_gamification_data() {
+  const today = get_today_date_string();
+  let data = JSON.parse(localStorage.getItem('gamification_data') || '{}');
+  if (!data.daily_points) data.daily_points = {};
+  data.daily_points[today] = points_today;
+  data.daily_points_threshold = daily_points_threshold;
+  localStorage.setItem('gamification_data', JSON.stringify(data));
+}
+
+function restore_gamification_data() {
+  const today = get_today_date_string();
+  let data = JSON.parse(localStorage.getItem('gamification_data') || '{}');
+  points_today = (data.daily_points && data.daily_points[today]) ? data.daily_points[today] : 0;
+  daily_points_threshold = data.daily_points_threshold || 100;
+  update_gamification_panel();
+}
+
+function calculate_streak() {
+  let data = JSON.parse(localStorage.getItem('gamification_data') || '{}');
+  let daily_points = data.daily_points || {};
+  let streak = 0;
+  let d = new Date();
+  for (let i = 0; i < 365; i++) {
+    let ds = d.toISOString().split('T')[0];
+    if ((daily_points[ds] || 0) >= daily_points_threshold) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function update_gamification_panel() {
+  const points_display = document.getElementById('points-display');
+  const streak_display = document.getElementById('streak-display');
+  const gamification_panel = document.getElementById('gamification-panel');
+  if (typeof show_scoring === 'undefined') show_scoring = true;
+  if (gamification_panel) {
+    gamification_panel.style.display = show_scoring ? 'block' : 'none';
+  }
+  if (!show_scoring) return;
+  if (points_display) {
+    let text = `Today: ${points_today} pts`;
+    if (is_task_timer_running && !timer_paused && timer_is_complete === 0) text += ' ⚡';
+    points_display.innerText = text;
+  }
+  if (streak_display) {
+    streak_display.innerText = `🔥 ${calculate_streak()} day streak`;
+  }
+}
+
+function award_point() {
+  console.log('award_point called', {is_task_timer_running, timer_paused, timer_is_complete});
+  if (is_task_timer_running && !timer_paused && timer_is_complete === 0) {
+    points_today++;
+    save_gamification_data();
+    update_gamification_panel();
+    console.log('Point awarded. points_today:', points_today);
+    points_last_award_time = Date.now();
+    points_award_remaining_ms = 60000;
+  }
+}
+
+function start_points_tracking() {
+  if (points_interval || points_timeout) return; // Only start if not already running
+  console.log('start_points_tracking called');
+  // If resuming, use the remaining ms, otherwise start fresh
+  if (points_award_remaining_ms < 60000) {
+    points_timeout = setTimeout(function() {
+      award_point();
+      points_timeout = null;
+      points_interval = setInterval(award_point, 60000);
+    }, points_award_remaining_ms);
+  } else {
+    points_last_award_time = Date.now();
+    points_interval = setInterval(award_point, 60000);
+  }
+}
+
+function stop_points_tracking() {
+  if (points_interval) {
+    clearInterval(points_interval);
+    points_interval = null;
+    console.log('stop_points_tracking called (interval)');
+  }
+  if (points_timeout) {
+    clearTimeout(points_timeout);
+    points_timeout = null;
+    console.log('stop_points_tracking called (timeout)');
+  }
+  // Calculate remaining ms until next point
+  if (points_last_award_time) {
+    var elapsed = Date.now() - points_last_award_time;
+    points_award_remaining_ms = Math.max(60000 - elapsed, 1);
+  } else {
+    points_award_remaining_ms = 60000;
+  }
+}
+
 function toggle_colors(target, prop, color1, color2) {
   current_val = document.querySelector(target).style[prop];
 
@@ -38,6 +154,8 @@ function timer_complete() {
   clearInterval(interval);
   timer_is_complete = 1;
   overtime_seconds = 0;
+  stop_points_tracking();
+  is_task_timer_running = false;
 
   if (play_audio_on_complete) {
     var audio;
@@ -113,6 +231,31 @@ function format_time(seconds) {
   return final_time;
 }
 
+function fitTextToContainer(elementId, minFontSize = 12, maxFontSize = 48) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const parent = el.parentElement;
+  if (!parent) return;
+
+  let fontSize = maxFontSize;
+  el.style.fontSize = fontSize + "px";
+  el.style.whiteSpace = "normal";
+  el.style.height = "auto";
+
+  // Estimate line height as 1.2em
+  let maxHeight = 2 * fontSize * 1.2;
+
+  while (
+    (el.scrollWidth > parent.clientWidth || el.offsetHeight > maxHeight) &&
+    fontSize > minFontSize
+  ) {
+    fontSize -= 1;
+    el.style.fontSize = fontSize + "px";
+    maxHeight = 2 * fontSize * 1.2;
+    el.style.height = "auto";
+  }
+}
+
 function set_timer(minutes, description) {
   start_timer_seconds = minutes * 60;
   current_timer = start_timer_seconds;
@@ -121,17 +264,23 @@ function set_timer(minutes, description) {
   // save this new timer length as the default for next launch
   save_config();
 
-  // if timer/task description is set, then config the display
+  // if timer/task description is set, then config the display and start points tracking
   if (description) {
     console.log("setting description", description);
     timer_description_text = description;
+
+    // Dynamically fit font size to container
+    document.getElementById("timer-description").innerText = timer_description_text;
+    fitTextToContainer("timer-description");
   } else {
+    // this is not a task timer, so stop points tracking and reset the timer
     task_description = "";
     timer_description_text = "";
+    stop_points_tracking();
+    is_task_timer_running = false;
   }
 
-  document.getElementById("timer-description").innerText =
-    timer_description_text;
+  document.getElementById("timer-description").innerText = timer_description_text;
 
   start_timer();
   timer_is_complete = 0;
@@ -167,8 +316,8 @@ function open_config() {
   save_current_window_size();
 
   // resize the window
-  var width = 380;
-  var height = 400;
+  var width = 360;
+  var height = 600;
   window.resizeTo(width, height);
 
   // show the config div
@@ -358,6 +507,7 @@ function update_timer(seconds) {
   timer_value.innerHTML = format_time(seconds);
   document.title = format_time(seconds);
   update_fill();
+  update_gamification_panel();
 }
 
 function countdown() {
@@ -379,13 +529,15 @@ function start_timer() {
   }, 1000);
   document.querySelector("#paused-message").style.display = "none";
   timer_paused = false;
+  // Always resume points tracking if this is a task timer and timer is not complete
+  if (is_task_timer_running && timer_is_complete === 0) start_points_tracking();
 }
 
 function pause_timer() {
   clearInterval(interval);
   document.querySelector("#paused-message").style.display = "flex";
   timer_paused = true;
-
+  stop_points_tracking();
   // if the timer has completed and user pauses it, assume they want to reset it as well
   if (timer_is_complete == 1) {
     reset_timer();
@@ -448,7 +600,25 @@ function restore_config() {
 
       // restore default timer length (in minutes)
       set_timer(config["default_timer_length"]);
+
+      // restore show_scoring
+      if (typeof config["show_scoring"] === 'undefined') {
+        show_scoring = true;
+      } else {
+        show_scoring = config["show_scoring"];
+      }
+      if (document.getElementById("config_show_scoring")) {
+        document.getElementById("config_show_scoring").checked = show_scoring;
+      }
+      update_gamification_panel();
     }
+  } else {
+    // Default: show scoring ON
+    show_scoring = true;
+    if (document.getElementById("config_show_scoring")) {
+      document.getElementById("config_show_scoring").checked = true;
+    }
+    update_gamification_panel();
   }
 }
 
@@ -459,6 +629,7 @@ function save_config() {
   document.querySelectorAll(".config_el").forEach(function (o) {
     if (o.type == "checkbox") {
       config_data[o.name] = o.checked;
+      if (o.name === "show_scoring") show_scoring = o.checked;
     } else if (o.type == "file") {
       // File input handled separately via handle_custom_audio function
       // Don't include file input in config data
@@ -477,6 +648,9 @@ function save_config() {
 
   // immediately set the new backgroud color
   change_bgcolor(config_data["bgcolor"]);
+
+  // immediately update scoring panel visibility
+  update_gamification_panel();
 }
 
 function populate_task_summary(task_data) {
@@ -589,6 +763,11 @@ function start_timer_from_task(task) {
   // clear input minutes so user can override task timer and start a new timer fresh
   input_minutes = "";
 
+  is_task_timer_running = true;
+  points_award_remaining_ms = 60000;
+  points_last_award_time = Date.now();
+  start_points_tracking();
+
   set_timer(task_minutes, task_description);
   reset_and_restart_timer();
   close_task();
@@ -679,6 +858,17 @@ function init() {
       }
     });
 
+  // Add task list button click event
+  document
+    .querySelector("#tasklist-button")
+    .addEventListener("click", () => {
+      if (task_is_showing) {
+        close_task();
+      } else {
+        open_task();
+      }
+    });
+
   //hookup_task_buttons()
 }
 
@@ -702,7 +892,11 @@ window.onload = function () {
 
   restore_config();
   restore_tasks();
+  restore_gamification_data();
   init();
   start_timer();
   hookup_task_input();
+
+  // Responsive font size for timer description
+  window.addEventListener('resize', () => fitTextToContainer("timer-description"));
 };

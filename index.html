@@ -1,65 +1,101 @@
 <html>
 <head>
-<link rel="stylesheet" href="styles.css"/>
+    <title>Task Timer</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css"/>
 </head>
 </html>
 <body id="body" style="background:#fff">
-<div id="config">
-    <div class="block">
-        <div>Ding on timer complete: <input type="checkbox" class="checkbox config_el" name="ding" checked="true" id="config_ding"/></div>
-        <div>Custom ding sound: <input type="file" class="config_el" name="custom_audio" accept=".mp3,.wav" id="config_custom_audio"/></div>
-        <div>Timer background color: <input type="color" class="config_el" name="bgcolor" value="#cc6633" id="config_bgcolor"/></div>
-        <div style="text-align:center; margin-top:10px"><input type="button" class="button" value="SAVE" id="save_config_button"/></div>
-    </div>
-    <hr/>
-    <div class="block">
-        <h3>Keyboard Shortcuts</h3>
-        <div>
-            <div><b>Space</b> or <b>P</b> : Pause/Resume</div>
-            <div><b>1-999</b> : Set timer for [1-999] mins (Enter to start)</div>
-            <div><b>R</b> : Restart timer</div>
-            <div><b>T</b> : Task view</div>
-            <div><b>?</b> : Toggle settings panel</div>
-            <div><b>&gt;</b> : Mark current task complete and begin next task</div>
+    <div id="config">
+        <div class="settings-card">
+        <h2>Settings</h2>
+        <div class="settings-row">
+            <label for="config_ding">Ding on timer complete:</label>
+            <input type="checkbox" class="checkbox config_el" name="ding" id="config_ding" checked="true"/>
+        </div>
+        <div class="settings-row">
+            <label for="config_custom_audio">Custom ding sound:</label>
+            <input type="file" class="config_el" name="custom_audio" accept=".mp3,.wav" id="config_custom_audio" style="width:180px"/>
+        </div>
+        <div class="settings-row">
+            <label for="config_bgcolor">Timer background color:</label>
+            <input type="color" class="config_el" name="bgcolor" value="#cc6633" id="config_bgcolor"/>
+        </div>
+        <div class="settings-row">
+            <label for="config_points_threshold">Daily points threshold for streak:</label>
+            <input type="number" class="config_el" name="daily_points_threshold" value="100" id="config_points_threshold" min="1" max="1000"/>
+        </div>
+        <div class="settings-row">
+            <label for="config_show_scoring">Show scoring (points & streak):</label>
+            <input type="checkbox" class="checkbox config_el" name="show_scoring" id="config_show_scoring" checked="true"/>
+        </div>
+        <div class="settings-row" style="justify-content:center; margin-top:18px;">
+            <input type="button" class="button save-btn" value="Save Settings" id="save_config_button"/>
+        </div>
+        </div>
+        <hr/>
+        <div class="block">
+            <h3>Gamification</h3>
+            <ul style="margin: 0 0 0 18px; padding: 0 0 0 0.5em;">
+            <li>Earn 1 point per minute when task timer is running</li>
+            <li>Maintain a streak by earning enough points daily</li>
+            <li>Only task list timers earn points (not manual timers)</li>
+            <li>Adjust the daily threshold above to customize difficulty</li>
+            </ul>
+        </div>
+        <hr/>
+        <div class="block">
+            <h3>Keyboard Shortcuts</h3>
+            <div style="margin: 0 0 0 12px;">
+                <div><b>Space</b> or <b>P</b> : Pause/Resume</div>
+                <div><b>1-999</b> : Set timer for [1-999] mins (Enter to start)</div>
+                <div><b>R</b> : Restart timer</div>
+                <div><b>T</b> : Task view</div>
+                <div><b>?</b> : Toggle settings panel</div>
+                <div><b>&gt;</b> : Mark current task complete and begin next task</div>
+            </div>
         </div>
     </div>
-</div>
-<div id="task-list">
-    <h3>Task List (<a href="#" id="close_task_list_button">close</a>)</h3>
-    <div class="task template">
-        <div class="name"></div>
-        <div class="start button">start</div>
-        <div class="remove button">remove</div>
+    <div id="task-list">
+        <h3 style="margin-top:10px">Task List (<a href="#" id="close_task_list_button">close</a>)</h3>
+        <div class="task template">
+            <div class="name"></div>
+            <div class="start button">start</div>
+            <div class="remove button">remove</div>
+        </div>
+        <div>
+            <form id="new_task_form">
+            <input type="text" name="new_task" id="new_task_input" value="" placeholder="mins - task (i.e. 20 - draft blog post)" style="width:80%"/>
+            <input type="button" id="new_task_submit" value="add"/>
+            </form>
+        </div>
+        <div id="tasks"></div>
+        <div id="task-summary">
+            <div class="sum"></div>
+            <div id="toast">You have reached the end of the task list</div>
+        </div>
     </div>
-    <div>
-        <form id="new_task_form">
-        <input type="text" name="new_task" id="new_task_input" value="" placeholder="mins - task (i.e. 20 - draft blog post)" style="width:80%"/>
-        <input type="button" id="new_task_submit" value="add"/>
-        </form>
+    <div id="timer">
+        <div id="fill"></div>
+        <div id="input-minutes" class="center"></div>
+        <div id="paused-message" class="center">PAUSED</div>
+        <div class="center timer-value-container">
+            <span id="timer-value" style="color:#000">---</span>
+        </div>
+        <div id="timer-description"></div>
+        <div id="gamification-panel">
+            <div id="points-display">Today: 0 pts</div>
+            <div id="streak-display">&#128293; 0 day streak</div>
+        </div>
+        <button id="tasklist-button" class="icon-btn" title="Task List">
+            📝
+        </button>
+        <button id="settings-button" class="icon-btn" title="Settings">
+            ⚙️
+        </button>
     </div>
-    <div id="tasks"></div>
-    <div id="task-summary">
-        <div class="sum"></div>
-        <div id="toast">You have reached the end of the task list</div>
-    </div>
-</div>
-<div id="timer">
-    <div id="fill"></div>
-    <div id="input-minutes" class="center"></div>
-    <div id="paused-message" class="center">PAUSED</div>
-    <div class="center timer-value-container">
-        <span id="timer-value" style="color:#000">---</span>
-    </div>
-    <div id="timer-description"></div>
-    <button id="settings-button" class="settings-btn" title="Settings">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-            <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
-        </svg>
-    </button>
-</div>
 
-<script src="main.js"></script>
+    <script src="main.js"></script>
 
-</body>
+    </body>
 </html>

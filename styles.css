@@ -6,7 +6,7 @@ body {
 
 h3 {
     margin-block-start: 0px;
-    padding:10px;
+    padding:0px 10px;
 }
 
 #new_task_form {
@@ -166,31 +166,144 @@ svg {
     transition: opacity 1s ease-in-out;
   }
 
-.settings-btn {
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 4px;
+    margin-right: 0;
+    color: #333;
     position: absolute;
     top: 10px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid #ccc;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     z-index: 10;
-    transition: background-color 0.2s ease;
+}
+#settings-button.icon-btn {
+    right: 10px;
+}
+#tasklist-button.icon-btn {
+    right: 44px;
 }
 
-.settings-btn:hover {
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+#gamification-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.settings-btn svg {
-    width: 16px;
-    height: 16px;
+#points-display {
+    font-weight: bold;
     color: #333;
+    margin-bottom: 4px;
+}
+
+#streak-display {
+    color: #ff6b35;
+    font-weight: bold;
+}
+
+.settings-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 0px 18px;
+  max-width: 380px;
+  min-width: 240px;
+  font-family: inherit;
+}
+
+.settings-card h2 {
+  font-size: 1.05em;
+  margin: 16px 0 10px 0;
+  color: #444;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.settings-row label {
+  flex: 1 0 120px;
+  font-size: 0.98em;
+  color: #222;
+  text-align: left;
+  margin-right: 8px;
+}
+
+.settings-row input[type='checkbox'],
+.settings-row input[type='color'],
+.settings-row input[type='file'],
+.settings-row input[type='number'] {
+  flex: 0 0 auto;
+  font-size: 0.98em;
+  margin-left: 0;
+  text-align: left;
+}
+
+.settings-row input[type='number'] {
+  width: 60px;
+  padding: 2px 6px;
+}
+
+.settings-row input[type='color'],
+.settings-row input[type='file'] {
+  min-width: 0;
+}
+
+.settings-row.vertical {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.settings-row.vertical label {
+  text-align: left;
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.save-btn {
+  background: #5a6;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 1em;
+  padding: 10px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+.save-btn:hover, .save-btn:focus {
+  background: #48914a;
+  outline: none;
+}
+
+.settings-row input[type='number'],
+.settings-row input[type='color'],
+.settings-row input[type='file'] {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border 0.2s;
+}
+.settings-row input[type='number']:focus,
+.settings-row input[type='color']:focus,
+.settings-row input[type='file']:focus {
+  border: 1.5px solid #5a6;
+  outline: none;
 }
